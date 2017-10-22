@@ -1,9 +1,7 @@
 package eShop
 
 import akka.actor._
-import akka.dispatch.sysmsg.Failed
 import akka.event.LoggingReceive
-import eShop.Cart._
 
 object Cart {
 
@@ -28,18 +26,20 @@ object Cart {
 }
 
 class Cart() extends Actor {
+
+  import Cart._
+
   var itemCount = BigDecimal(0)
 
-  override def receive: LoggingReceive = empty()
+  override def receive: Receive = empty()
 
-  def empty(): LoggingReceive = {
+  def empty(): Receive = LoggingReceive {
     case ItemAdded =>
       itemCount += 1
       context become nonEmpty
-    case _ => sender ! Failed
   }
 
-  def nonEmpty(): LoggingReceive = {
+  def nonEmpty(): Receive = LoggingReceive {
     case ItemAdded => itemCount += 1
     case ItemRemoved =>
       itemCount -= 1
@@ -47,12 +47,10 @@ class Cart() extends Actor {
         context become empty
       }
     case CheckoutStarted => context become inCheckout
-    case _ => sender ! Failed
   }
 
-  def inCheckout(): LoggingReceive = {
+  def inCheckout(): Receive = LoggingReceive {
     case CheckoutClosed => context become empty
     case CheckoutCancelled => context become nonEmpty
-    case _ => sender ! Failed
   }
 }

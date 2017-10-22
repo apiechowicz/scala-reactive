@@ -1,10 +1,7 @@
 package eShop
 
 import akka.actor.Actor
-import akka.dispatch.sysmsg.Failed
 import akka.event.LoggingReceive
-import eShop.Cart._
-import eShop.Checkout.{DeliveryMethodSelected, PaymentReceived, PaymentSelected}
 
 object Checkout {
 
@@ -26,34 +23,34 @@ object Checkout {
 }
 
 class Checkout extends Actor {
-  override def receive: LoggingReceive = {
+
+  import Cart._
+  import Checkout._
+
+  override def receive: Receive = LoggingReceive {
     case CheckoutStarted => context become selectingDelivery
-    case _ => Failed
   }
 
-  def selectingDelivery: LoggingReceive = {
+  def selectingDelivery: Receive = LoggingReceive {
     case DeliveryMethodSelected => context become selectingPaymentMethod
     case CheckoutCancelled => context become cancelled
-    case _ => Failed
   }
 
-  def cancelled: LoggingReceive = {
+  def cancelled: Receive = LoggingReceive {
     case _ => context stop self
   }
 
-  def selectingPaymentMethod: LoggingReceive = {
+  def selectingPaymentMethod: Receive = LoggingReceive {
     case PaymentSelected => context become processingPayment
     case CheckoutCancelled => context become cancelled
-    case _ => Failed
   }
 
-  def processingPayment: LoggingReceive = {
+  def processingPayment: Receive = LoggingReceive {
     case PaymentReceived => context become closed
     case CheckoutCancelled => context become cancelled
-    case _ => Failed
   }
 
-  def closed: LoggingReceive = {
+  def closed: Receive = LoggingReceive {
     case _ => context stop self
   }
 }
