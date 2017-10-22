@@ -20,19 +20,19 @@ final case class CheckoutCancelled()
 final case class CheckoutClosed()
 
 // states
-sealed trait State
+sealed trait CartState
 
-case object Empty extends State
+case object Empty extends CartState
 
-case object NonEmpty extends State
+case object NonEmpty extends CartState
 
-case object InCheckout extends State
+case object InCheckout extends CartState
 
-sealed trait Data
+sealed trait CartData
 
-final case class ItemCount(value: Int) extends Data
+final case class ItemCount(value: Int) extends CartData
 
-class Cart extends FSM[State, Data] {
+class Cart extends FSM[CartState, CartData] {
   val timerName = "CartTimerFSM"
   val timerTimeout = FiniteDuration(30, TimeUnit.SECONDS)
 
