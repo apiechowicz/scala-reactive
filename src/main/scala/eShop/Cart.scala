@@ -40,15 +40,13 @@ class Cart() extends Actor {
   }
 
   def nonEmpty(): LoggingReceive = {
-    case ItemAdded =>
-      itemCount += 1
+    case ItemAdded => itemCount += 1
     case ItemRemoved =>
       itemCount -= 1
       if (itemCount == BigDecimal(0)) {
         context become empty
       }
-    case CheckoutStarted =>
-      context become inCheckout
+    case CheckoutStarted => context become inCheckout
     case _ => sender ! Failed
   }
 
