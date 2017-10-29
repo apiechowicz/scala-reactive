@@ -25,13 +25,13 @@ object Cart {
 
 }
 
-class Cart() extends Actor with Timers {
+class Cart extends Actor with Timers {
 
   import Cart._
   import Customer._
 
   val cartTimer = "CartTimer"
-  val cartTimeout = FiniteDuration(30, TimeUnit.SECONDS)
+  val cartTimeout = FiniteDuration(5, TimeUnit.MINUTES)
 
   var itemCount = BigDecimal(0)
 
@@ -40,25 +40,27 @@ class Cart() extends Actor with Timers {
   def empty(): Receive = LoggingReceive {
     case ItemAdded =>
       itemCount += 1
-      timers.startSingleTimer(cartTimer, CartTimerExpired, cartTimeout)
+      startTimer()
       context become nonEmpty
+  }
+
+  private def startTimer(): Unit = {
+    timers.startSingleTimer(cartTimer, CartTimerExpired, cartTimeout)
   }
 
   def nonEmpty(): Receive = LoggingReceive {
     case ItemAdded =>
       itemCount += 1
-      timers.startSingleTimer(cartTimer, CartTimerExpired, cartTimeout)
+      startTimer()
+    case ItemRemoved if itemCount > 1 =>
+      itemCount -= 1
+      startTimer()
     case ItemRemoved =>
-      if (itemCount > 1) {
-        itemCount -= 1
-        timers.startSingleTimer(cartTimer, CartTimerExpired, cartTimeout)
-      } else {
-        itemCount = 0
-        timers.cancel(cartTimer)
-        becomeEmpty(sender)
-      }
+      itemCount = 0
+      cancelTimer()
+      becomeEmpty(sender)
     case StartCheckout =>
-      timers.cancel(cartTimer)
+      cancelTimer()
       val checkout = context.actorOf(Props[Checkout], "Checkout")
       sender ! CheckoutStarted(checkout)
       checkout ! CheckoutStarted(context.parent)
@@ -68,15 +70,20 @@ class Cart() extends Actor with Timers {
       becomeEmpty(sender)
   }
 
+  private def cancelTimer(): Unit = {
+    timers.cancel(cartTimer)
+  }
+
   private def becomeEmpty(sender: ActorRef): Unit = {
     sender ! CartEmpty
     context become empty
   }
 
   def inCheckout(): Receive = LoggingReceive {
-    case CheckoutClosed => context become empty
+    case CheckoutClosed =>
+      becomeEmpty(context.parent)
     case CheckoutCancelled =>
-      timers.cancel(cartTimer)
+      startTimer()
       context become nonEmpty
   }
 }
