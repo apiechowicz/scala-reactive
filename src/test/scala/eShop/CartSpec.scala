@@ -19,7 +19,7 @@ class CartSpec extends TestKit(ActorSystem("CartSpec")) with ImplicitSender with
     system.terminate
   }
 
-  "A Cart (synchronous)" must {
+  "A Cart" must {
     "start as empty" in {
       assert(cart.underlyingActor.itemCount == 0)
       assert(!cart.underlyingActor.timers.isTimerActive(cart.underlyingActor.cartTimer))
