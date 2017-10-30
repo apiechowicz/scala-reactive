@@ -2,27 +2,22 @@ package eShop
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{Actor, Timers}
+import akka.actor.{Actor, ActorRef, Props, Timers}
 import akka.event.LoggingReceive
 
 import scala.concurrent.duration.FiniteDuration
 
 object Checkout {
 
-  private case class CheckoutTimerExpired() {
-  }
+  private case class CheckoutTimerExpired()
 
-  case class DeliveryMethodSelected() {
-  }
+  case class DeliveryMethodSelected()
 
-  case class PaymentSelected() {
-  }
+  case class PaymentSelected()
 
-  case class PaymentReceived() {
-  }
+  private case class PaymentTimerExpired()
 
-  private case class PaymentTimerExpired() {
-  }
+  case class PaymentServiceStarted(service: ActorRef)
 
 }
 
@@ -30,6 +25,7 @@ class Checkout extends Actor with Timers {
 
   import Cart._
   import Checkout._
+  import PaymentService.PaymentReceived
 
   val checkoutTimer = "CheckoutTimer"
   val checkoutTimeout = FiniteDuration(30, TimeUnit.SECONDS)
@@ -37,7 +33,7 @@ class Checkout extends Actor with Timers {
   val paymentTimeout = FiniteDuration(30, TimeUnit.SECONDS)
 
   override def receive: Receive = LoggingReceive {
-    case CheckoutStarted =>
+    case CheckoutStarted(_) =>
       timers.startSingleTimer(checkoutTimer, CheckoutTimerExpired, checkoutTimeout)
       context become selectingDelivery
   }
@@ -57,6 +53,7 @@ class Checkout extends Actor with Timers {
   def selectingPaymentMethod: Receive = LoggingReceive {
     case PaymentSelected =>
       timers.cancel(checkoutTimer)
+      sender ! PaymentServiceStarted(context.actorOf(Props[PaymentService], "PaymentMethod"))
       timers.startSingleTimer(paymentTimer, PaymentTimerExpired, FiniteDuration(500, TimeUnit.MILLISECONDS))
       context become processingPayment
     case CheckoutCancelled =>
@@ -68,14 +65,11 @@ class Checkout extends Actor with Timers {
   def processingPayment: Receive = LoggingReceive {
     case PaymentReceived =>
       timers.cancel(paymentTimer)
-      context become closed
+      context.parent ! CheckoutClosed
+      context stop self
     case CheckoutCancelled =>
       timers.cancel(paymentTimer)
       context become cancelled
     case PaymentTimerExpired => context become cancelled
-  }
-
-  def closed: Receive = LoggingReceive {
-    case _ => context stop self
   }
 }
