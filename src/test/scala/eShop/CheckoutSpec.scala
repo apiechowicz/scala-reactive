@@ -1,3 +1,4 @@
+/*
 package eShop
 
 import akka.actor.{ActorSystem, IllegalActorStateException, Props}
@@ -69,3 +70,4 @@ class CheckoutSpec extends TestKit(ActorSystem("CheckoutSpec")) with ImplicitSen
     }
   }
 }
+*/

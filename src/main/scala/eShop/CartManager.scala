@@ -7,6 +7,7 @@ import akka.event.LoggingReceive
 import akka.persistence.{PersistentActor, RecoveryCompleted}
 
 import scala.concurrent.duration.FiniteDuration
+import scala.util.Random
 
 object CartManager {
 
@@ -16,7 +17,7 @@ object CartManager {
 
   private case class CartTimerExpired()
 
-  case class CheckoutStarted(actor: ActorRef)
+  case class CheckoutStarted(actor: ActorRef, date: Long)
 
   case class CheckoutCancelled(date: Long = System.currentTimeMillis())
 
@@ -56,9 +57,9 @@ class CartManager(id: Long, var cart: Cart) extends PersistentActor with Timers 
     }
     case StartCheckout => persist(StartCheckout) { event =>
       updateState(event)
-      val checkout = context.actorOf(Props[Checkout], "Checkout")
-      sender ! CheckoutStarted(checkout)
-      checkout ! CheckoutStarted(context.parent)
+      val checkout = context.actorOf(Props(new Checkout(Random.nextLong())), "Checkout")
+      sender ! CheckoutStarted(checkout, System.currentTimeMillis())
+      checkout ! CheckoutStarted(context.parent, System.currentTimeMillis())
     }
     case CartTimerExpired => persist(CartTimerExpired) { event =>
       updateState(event)
@@ -69,7 +70,7 @@ class CartManager(id: Long, var cart: Cart) extends PersistentActor with Timers 
   def inCheckout(): Receive = LoggingReceive {
     case CheckoutClosed => persist(CheckoutClosed) { event =>
       updateState(event)
-      sender ! CartEmpty
+      context.parent ! CartEmpty
     }
     case CheckoutCancelled => persist(CheckoutCancelled)(event => updateState(event))
   }

@@ -22,7 +22,7 @@ class Customer extends Actor {
   import Customer._
   import PaymentService._
 
-  val cartManager: ActorRef = context.actorOf(Props(new CartManager(Random.nextLong(), Cart.empty)), "Cart")
+  val cartManager: ActorRef = context.actorOf(Props(new CartManager(Random.nextLong(), Cart.empty)), "CartManager")
 
   override def receive: Receive = LoggingReceive {
     case "add" => cartManager ! ItemAdded(Item(URI.create("itemName"), "itemName", BigDecimal.apply(10), 1), System.currentTimeMillis())
@@ -34,11 +34,12 @@ class Customer extends Actor {
 
   def inCheckout(): Receive = LoggingReceive {
     case CheckoutClosed => context become receive
-    case CheckoutStarted(c) =>
+    case CheckoutStarted(c, _) =>
       val checkout = c
       checkout ! DeliveryMethodSelected
-      checkout ! PaymentSelected
+      checkout ! PaymentSelected(System.currentTimeMillis())
       context become inPayment
+    case CartEmpty => System.out.println("car has been emptied! kewl")
   }
 
   def inPayment(): Receive = LoggingReceive {
