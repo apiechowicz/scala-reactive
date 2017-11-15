@@ -9,9 +9,9 @@ import scala.concurrent.duration.FiniteDuration
 
 object CartManager {
 
-  case class ItemAdded()
+  case class ItemAdded(item: Item)
 
-  case class ItemRemoved()
+  case class ItemRemoved(item: Item, count: Int)
 
   private case class CartTimerExpired()
 
@@ -25,7 +25,7 @@ object CartManager {
 
 }
 
-class CartManager extends Actor with Timers {
+class CartManager(var cart: Cart) extends Actor with Timers {
 
   import CartManager._
   import Customer._
@@ -33,13 +33,11 @@ class CartManager extends Actor with Timers {
   val cartTimer = "CartTimer"
   val cartTimeout = FiniteDuration(5, TimeUnit.MINUTES)
 
-  var itemCount = BigDecimal(0)
-
   override def receive: Receive = empty()
 
   def empty(): Receive = LoggingReceive {
-    case ItemAdded =>
-      itemCount += 1
+    case ItemAdded(item) =>
+      cart = cart.addItem(item)
       startTimer()
       context become nonEmpty
   }
@@ -49,16 +47,16 @@ class CartManager extends Actor with Timers {
   }
 
   def nonEmpty(): Receive = LoggingReceive {
-    case ItemAdded =>
-      itemCount += 1
+    case ItemAdded(item) =>
+      cart = cart.addItem(item)
       startTimer()
-    case ItemRemoved if itemCount > 1 =>
-      itemCount -= 1
-      startTimer()
-    case ItemRemoved =>
-      itemCount = 0
-      cancelTimer()
-      becomeEmpty(sender)
+    case ItemRemoved(item, count) =>
+      cart = cart.removeItem(item, count)
+      if (!cart.isEmpty) startTimer()
+      else {
+        cancelTimer()
+        becomeEmpty(sender)
+      }
     case StartCheckout =>
       cancelTimer()
       val checkout = context.actorOf(Props[Checkout], "Checkout")
@@ -66,7 +64,7 @@ class CartManager extends Actor with Timers {
       checkout ! CheckoutStarted(context.parent)
       context become inCheckout
     case CartTimerExpired =>
-      itemCount = 0
+      cart = Cart.empty
       becomeEmpty(sender)
   }
 
