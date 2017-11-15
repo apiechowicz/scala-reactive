@@ -7,7 +7,7 @@ import akka.event.LoggingReceive
 
 import scala.concurrent.duration.FiniteDuration
 
-object Cart {
+object CartManager {
 
   case class ItemAdded()
 
@@ -25,9 +25,9 @@ object Cart {
 
 }
 
-class Cart extends Actor with Timers {
+class CartManager extends Actor with Timers {
 
-  import Cart._
+  import CartManager._
   import Customer._
 
   val cartTimer = "CartTimer"

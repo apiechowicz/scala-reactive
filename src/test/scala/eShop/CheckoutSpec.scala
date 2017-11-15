@@ -6,7 +6,7 @@ import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
 class CheckoutSpec extends TestKit(ActorSystem("CheckoutSpec")) with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 
-  import Cart._
+  import CartManager._
   import Checkout._
   import PaymentService._
 

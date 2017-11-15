@@ -23,7 +23,7 @@ object Checkout {
 
 class Checkout extends Actor with Timers {
 
-  import Cart._
+  import CartManager._
   import Checkout._
   import PaymentService.PaymentReceived
 

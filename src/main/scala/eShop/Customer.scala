@@ -13,12 +13,12 @@ object Customer {
 
 class Customer extends Actor {
 
-  import Cart._
+  import CartManager._
   import Checkout._
   import Customer._
   import PaymentService._
 
-  val cart: ActorRef = context.actorOf(Props[Cart], "Cart")
+  val cart: ActorRef = context.actorOf(Props[CartManager], "Cart")
 
   override def receive: Receive = LoggingReceive {
     case "add" => cart ! ItemAdded
