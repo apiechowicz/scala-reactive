@@ -1,7 +1,11 @@
 package eShop
 
+import java.net.URI
+
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.LoggingReceive
+
+import scala.util.Random
 
 object Customer {
 
@@ -18,13 +22,13 @@ class Customer extends Actor {
   import Customer._
   import PaymentService._
 
-  val cart: ActorRef = context.actorOf(Props(new CartManager(Cart.empty)), "Cart")
+  val cartManager: ActorRef = context.actorOf(Props(new CartManager(Random.nextLong(), Cart.empty)), "Cart")
 
   override def receive: Receive = LoggingReceive {
-    case "add" => cart ! ItemAdded
-    case "remove" => cart ! ItemRemoved
+    case "add" => cartManager ! ItemAdded(Item(URI.create("itemName"), "itemName", BigDecimal.apply(10), 1), System.currentTimeMillis())
+    case "remove" => cartManager ! ItemRemoved(Item(URI.create("itemName"), "itemName", BigDecimal.apply(10), 1), 1, System.currentTimeMillis())
     case "checkout" =>
-      cart ! StartCheckout
+      cartManager ! StartCheckout
       context become inCheckout
   }
 
