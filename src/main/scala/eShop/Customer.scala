@@ -5,8 +5,6 @@ import java.net.URI
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.LoggingReceive
 
-import scala.util.Random
-
 object Customer {
 
   case class StartCheckout()
@@ -22,7 +20,9 @@ class Customer extends Actor {
   import Customer._
   import PaymentService._
 
-  val cartManager: ActorRef = context.actorOf(Props(new CartManager(Random.nextLong(), Cart.empty)), "CartManager")
+  val cartId: Long = 1
+  /*Random.nextLong()*/
+  val cartManager: ActorRef = context.actorOf(Props(new CartManager(cartId, Cart.empty)), "CartManager")
 
   override def receive: Receive = LoggingReceive {
     case "add" => cartManager ! ItemAdded(Item(URI.create("itemName"), "itemName", BigDecimal.apply(10), 1), System.currentTimeMillis())

@@ -9,6 +9,13 @@ object eShop extends App {
     customer ! "add"
     customer ! "add"
     customer ! "remove"
-    customer ! "checkout"
+
+    Thread.sleep(5 * 1000)
+    system.terminate()
+    Thread.sleep(5 * 1000)
+
+    val system2 = ActorSystem("eShop")
+    val customer2 = system2.actorOf(Props[Customer], "Customer")
+    customer2 ! "checkout"
   }
 }
