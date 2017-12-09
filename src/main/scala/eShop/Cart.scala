@@ -1,89 +1,27 @@
 package eShop
 
-import java.util.concurrent.TimeUnit
+import java.net.URI
 
-import akka.actor._
-import akka.event.LoggingReceive
+case class Item(id: URI, name: String, price: BigDecimal, count: Int)
 
-import scala.concurrent.duration.FiniteDuration
+case class Cart(items: Map[URI, Item]) {
+  def addItem(item: Item): Cart = {
+    val currentCount = if (items contains item.id) items(item.id).count else 0
+    copy(items.updated(item.id, item.copy(count = currentCount + item.count)))
+  }
 
-object Cart {
+  def removeItem(item: Item, count: Int): Cart = {
+    val currentCount = if (items contains item.id) items(item.id).count else 0
+    if (count <= 0 || currentCount == 0) return this
+    if ((currentCount - count) > 0) {
+      return copy(items.updated(item.id, item.copy(count = currentCount - item.count)))
+    }
+    copy(items - item.id)
+  }
 
-  case class ItemAdded()
-
-  case class ItemRemoved()
-
-  private case class CartTimerExpired()
-
-  case class CheckoutStarted(actor: ActorRef)
-
-  case class CheckoutCancelled()
-
-  case class CheckoutClosed()
-
-  case class CartEmpty()
-
+  def isEmpty: Boolean = items.isEmpty
 }
 
-class Cart extends Actor with Timers {
-
-  import Cart._
-  import Customer._
-
-  val cartTimer = "CartTimer"
-  val cartTimeout = FiniteDuration(5, TimeUnit.MINUTES)
-
-  var itemCount = BigDecimal(0)
-
-  override def receive: Receive = empty()
-
-  def empty(): Receive = LoggingReceive {
-    case ItemAdded =>
-      itemCount += 1
-      startTimer()
-      context become nonEmpty
-  }
-
-  private def startTimer(): Unit = {
-    timers.startSingleTimer(cartTimer, CartTimerExpired, cartTimeout)
-  }
-
-  def nonEmpty(): Receive = LoggingReceive {
-    case ItemAdded =>
-      itemCount += 1
-      startTimer()
-    case ItemRemoved if itemCount > 1 =>
-      itemCount -= 1
-      startTimer()
-    case ItemRemoved =>
-      itemCount = 0
-      cancelTimer()
-      becomeEmpty(sender)
-    case StartCheckout =>
-      cancelTimer()
-      val checkout = context.actorOf(Props[Checkout], "Checkout")
-      sender ! CheckoutStarted(checkout)
-      checkout ! CheckoutStarted(context.parent)
-      context become inCheckout
-    case CartTimerExpired =>
-      itemCount = 0
-      becomeEmpty(sender)
-  }
-
-  private def cancelTimer(): Unit = {
-    timers.cancel(cartTimer)
-  }
-
-  private def becomeEmpty(sender: ActorRef): Unit = {
-    sender ! CartEmpty
-    context become empty
-  }
-
-  def inCheckout(): Receive = LoggingReceive {
-    case CheckoutClosed =>
-      becomeEmpty(context.parent)
-    case CheckoutCancelled =>
-      startTimer()
-      context become nonEmpty
-  }
+object Cart {
+  val empty = Cart(Map.empty)
 }

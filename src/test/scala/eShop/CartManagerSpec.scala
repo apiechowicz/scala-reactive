@@ -1,18 +1,19 @@
+/*
 package eShop
 
 import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestActorRef, TestKit}
 import org.scalatest.{BeforeAndAfterAll, WordSpecLike}
 
-class CartSpec extends TestKit(ActorSystem("CartSpec")) with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
+class CartManagerSpec extends TestKit(ActorSystem("CartSpec")) with ImplicitSender with WordSpecLike with BeforeAndAfterAll {
 
-  import Cart._
+  import CartManager._
   import Customer._
 
-  var cart: TestActorRef[Cart] = _
+  var cart: TestActorRef[CartManager] = _
 
   override protected def beforeAll(): Unit = {
-    cart = TestActorRef[Cart]
+    cart = TestActorRef[CartManager]
   }
 
   override def afterAll(): Unit = {
@@ -51,3 +52,4 @@ class CartSpec extends TestKit(ActorSystem("CartSpec")) with ImplicitSender with
     }
   }
 }
+*/

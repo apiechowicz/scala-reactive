@@ -1,5 +1,7 @@
 package eShop
 
+import java.net.URI
+
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.LoggingReceive
 
@@ -13,28 +15,31 @@ object Customer {
 
 class Customer extends Actor {
 
-  import Cart._
+  import CartManager._
   import Checkout._
   import Customer._
   import PaymentService._
 
-  val cart: ActorRef = context.actorOf(Props[Cart], "Cart")
+  val cartId: Long = 1
+  /*Random.nextLong()*/
+  val cartManager: ActorRef = context.actorOf(Props(new CartManager(cartId, Cart.empty)), "CartManager")
 
   override def receive: Receive = LoggingReceive {
-    case "add" => cart ! ItemAdded
-    case "remove" => cart ! ItemRemoved
+    case "add" => cartManager ! ItemAdded(Item(URI.create("itemName"), "itemName", BigDecimal.apply(10), 1), System.currentTimeMillis())
+    case "remove" => cartManager ! ItemRemoved(Item(URI.create("itemName"), "itemName", BigDecimal.apply(10), 1), 1, System.currentTimeMillis())
     case "checkout" =>
-      cart ! StartCheckout
+      cartManager ! StartCheckout
       context become inCheckout
   }
 
   def inCheckout(): Receive = LoggingReceive {
     case CheckoutClosed => context become receive
-    case CheckoutStarted(c) =>
+    case CheckoutStarted(c, _) =>
       val checkout = c
       checkout ! DeliveryMethodSelected
-      checkout ! PaymentSelected
+      checkout ! PaymentSelected(System.currentTimeMillis())
       context become inPayment
+    case CartEmpty => System.out.println("car has been emptied! kewl")
   }
 
   def inPayment(): Receive = LoggingReceive {
