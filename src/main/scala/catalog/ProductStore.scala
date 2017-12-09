@@ -2,7 +2,9 @@ package catalog
 
 import eShop.Item
 
-class ProductStore(items: List[Item]) {
+class ProductStore(file: String) {
+
+  private val items = ProductParser.parseProducts(file)
 
   private val numberOfBestMatches = 10
 
@@ -10,6 +12,7 @@ class ProductStore(items: List[Item]) {
     val keywords = query.split(" ")
     items.map(i => (i, countKeywords(i, keywords)))
       .sortBy(_._2)
+      .reverse
       .take(numberOfBestMatches)
       .map(i => i._1)
   }
