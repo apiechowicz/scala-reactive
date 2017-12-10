@@ -2,13 +2,16 @@ package payment
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
+import akka.actor.{ActorSystem, Props}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.{HttpApp, Route}
+import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
+import payment.PaymentServer.{BlikPaymentData, CreditCardPaymentData, PayPalPaymentData}
 
 import scala.concurrent.duration.FiniteDuration
+import scala.util.Success
 
 object PaymentServer extends App {
 
@@ -41,27 +44,48 @@ class PaymentServer extends HttpApp {
       get {
         complete(HttpEntity(ContentTypes.`text/html(UTF-8)`, "<h1>PaymentServer welcome!</h1>"))
       }
-    }
-    /*    pathPrefix("blik") {
-          pathEndOrSingleSlash {
-            post {
-
+    } ~
+      pathPrefix("blik") {
+        pathEndOrSingleSlash {
+          post {
+            formField('code).as(BlikPaymentData) {
+              paymentData =>
+                val blikHandler = system.actorOf(Props[BlikPaymentHandler])
+                onComplete(blikHandler ? paymentData) {
+                  case Success(status: StatusCode) => complete(status)
+                  case _ => complete(StatusCodes.InternalServerError)
+                }
             }
           }
         }
-        pathPrefix("credit-card") {
-          pathEndOrSingleSlash {
-            post {
-
+      } ~
+      pathPrefix("credit-card") {
+        pathEndOrSingleSlash {
+          post {
+            formField('cardNumber, 'expirationDate, 'owner, 'cvv).as(CreditCardPaymentData) {
+              paymentData =>
+                val cardHandler = system.actorOf(Props[CreditCardPaymentHandler])
+                onComplete(cardHandler ? paymentData) {
+                  case Success(status: StatusCode) => complete(status)
+                  case _ => complete(StatusCodes.InternalServerError)
+                }
             }
           }
         }
-        pathPrefix("paypal") {
-          pathEndOrSingleSlash {
-            post {
-
+      } ~
+      pathPrefix("paypal") {
+        pathEndOrSingleSlash {
+          post {
+            formField('login, 'password).as(PayPalPaymentData) {
+              paymentData =>
+                val paypalHandler = system.actorOf(Props[PayPalPaymentHandler])
+                onComplete(paypalHandler ? paymentData) {
+                  case Success(status: StatusCode) => complete(status)
+                  case _ => complete(StatusCodes.InternalServerError)
+                }
             }
           }
-        }*/
+        }
+      }
   }
 }

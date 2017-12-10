@@ -1,14 +1,14 @@
 package payment
 
 import akka.event.LoggingReceive
-import payment.PaymentErrors.InvalidPaymentData
+import akka.http.scaladsl.model.StatusCodes
 import payment.PaymentServer.PayPalPaymentData
 
 class PayPalPaymentHandler extends PaymentHandlingActor[PayPalPaymentData] {
   override def receive: Receive = LoggingReceive {
     case data: PayPalPaymentData =>
-      if (verifyData(data)) sender ! "success"
-      else sender ! InvalidPaymentData
+      if (verifyData(data)) sender ! StatusCodes.OK
+      else sender ! StatusCodes.BadRequest
       context.stop(self)
   }
 

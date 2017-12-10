@@ -1,7 +1,5 @@
 package payment
 
 object PaymentErrors {
-
-  final case class InvalidPaymentData()
-
+  // todo add list of payment errors
 }
