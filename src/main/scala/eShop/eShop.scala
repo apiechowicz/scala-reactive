@@ -6,9 +6,14 @@ object eShop extends App {
   override def main(args: Array[String]): Unit = {
     val system = ActorSystem("eShop")
     val customer = system.actorOf(Props[Customer], "Customer")
+
     customer ! "add"
     customer ! "add"
     customer ! "remove"
+
+    System.out.println("\tEnter query:")
+    val query = scala.io.StdIn.readLine()
+    customer ! query
 
     Thread.sleep(5 * 1000)
     system.terminate()

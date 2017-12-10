@@ -13,7 +13,9 @@ object ProductCatalog extends App {
   private val config = ConfigFactory.load()
   private val dbFile = config.getString(catalog + ".source-file")
 
-  private val system: ActorSystem = ActorSystem("ProductCatalog", config.getConfig(catalog))
+  private val systemName = "ProductCatalog"
+  implicit val system: ActorSystem = ActorSystem(systemName, config.getConfig(catalog).withFallback(config))
+
   private val productCatalog = system.actorOf(ProductCatalog.props(dbFile), catalog)
   Await.result(system.whenTerminated, Duration.Inf)
 
@@ -25,6 +27,6 @@ class ProductCatalog(file: String) extends Actor {
   private val productStore = context.actorOf(ProductStoreManager.props(file), "productStore")
 
   override def receive: Receive = LoggingReceive {
-    case FindProducts(query) => productStore.forward(FindProducts(query))
+    case FindProducts(query) => productStore forward FindProducts(query)
   }
 }

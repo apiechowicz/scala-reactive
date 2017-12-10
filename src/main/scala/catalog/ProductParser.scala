@@ -11,10 +11,14 @@ object ProductParser {
   private val itemCount = 15
 
   private[catalog] def parseProducts(file: String): List[Item] = {
-    scala.io.Source.fromFile(file).getLines()
+    val start = System.nanoTime()
+    val items = scala.io.Source.fromFile(file).getLines()
       .map(_.replace("\"", ""))
       .map(parseProduct)
       .toList
+    val stop = System.nanoTime()
+    System.out.println("Finished parsing products. (took: %d ms)".format((stop - start) / 1000000))
+    items
   }
 
   private def parseProduct(line: String): Item = {

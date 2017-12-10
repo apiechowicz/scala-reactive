@@ -4,6 +4,7 @@ import java.net.URI
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.LoggingReceive
+import catalog.ProductStoreManager.FindProducts
 
 object Customer {
 
@@ -21,7 +22,6 @@ class Customer extends Actor {
   import PaymentService._
 
   val cartId: Long = 1
-  /*Random.nextLong()*/
   val cartManager: ActorRef = context.actorOf(Props(new CartManager(cartId, Cart.empty)), "CartManager")
 
   override def receive: Receive = LoggingReceive {
@@ -30,6 +30,13 @@ class Customer extends Actor {
     case "checkout" =>
       cartManager ! StartCheckout
       context become inCheckout
+    case query: String =>
+      val productStore = context.actorSelection("akka.tcp://ProductCatalog@127.0.0.1:12553/user/catalog")
+      productStore ! FindProducts(query)
+    case items: List[Item] => items.foreach(i => {
+      System.out.println("\t" + i)
+      cartManager ! ItemAdded(i, System.currentTimeMillis())
+    })
   }
 
   def inCheckout(): Receive = LoggingReceive {
@@ -39,7 +46,7 @@ class Customer extends Actor {
       checkout ! DeliveryMethodSelected
       checkout ! PaymentSelected(System.currentTimeMillis())
       context become inPayment
-    case CartEmpty => System.out.println("car has been emptied! kewl")
+    case CartEmpty => System.out.println("cart has been emptied!")
   }
 
   def inPayment(): Receive = LoggingReceive {
