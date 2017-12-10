@@ -31,7 +31,7 @@ class Customer extends Actor {
       cartManager ! StartCheckout
       context become inCheckout
     case query: String =>
-      val productStore = context.actorSelection("akka.tcp://ProductCatalog@127.0.0.1:12553/user/catalog")
+      val productStore = context.actorSelection("akka.tcp://ProductCatalog@127.0.0.1:22553/user/catalog")
       productStore ! FindProducts(query)
     case items: List[Item] => items.foreach(i => {
       System.out.println("\t" + i)
