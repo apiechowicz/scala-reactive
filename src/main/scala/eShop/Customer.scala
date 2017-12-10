@@ -10,7 +10,15 @@ object Customer {
 
   case class StartCheckout()
 
-  case class DoPayment()
+  sealed trait PaymentMethod
+
+  case class DoPayment(method: PaymentMethod)
+
+  case class Blik(code: String) extends PaymentMethod
+
+  case class CreditCard(cardNumber: String, expirationDate: String, owner: String, cvv: String) extends PaymentMethod
+
+  case class PayPal(login: String, password: String) extends PaymentMethod
 
 }
 
@@ -51,7 +59,9 @@ class Customer extends Actor {
 
   def inPayment(): Receive = LoggingReceive {
     case PaymentServiceStarted(service) =>
-      service ! DoPayment
+      service ! DoPayment(Blik("123456"))
+    //     service ! DoPayment(CreditCard("1234567812345678", "07/95", "John Doe", "777"))
+    // service ! DoPayment(PayPal("login", "password"))
     case PaymentConfirmed =>
       context become inCheckout
   }
