@@ -17,7 +17,9 @@ class CreditCardPaymentHandler extends PaymentHandlingActor[CreditCardPaymentDat
   }
 
   private def isCardNumberValid(cardNumber: String): Boolean = {
-    isNumberOfLength(cardNumber, 16)
+    var allNumbers = true
+    cardNumber.foreach(c => allNumbers = allNumbers && isNumberOfLength(c.toString, 1))
+    allNumbers
   }
 
   private def isExpirationDateValid(expirationDate: String): Boolean = {
