@@ -8,10 +8,10 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{HttpApp, Route}
 import akka.pattern.ask
 import akka.util.Timeout
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.typesafe.config.ConfigFactory
 import eShop.Item
+import org.json4s._
+import org.json4s.jackson.Serialization.write
 
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Success
@@ -29,17 +29,14 @@ object RestProductCatalog {
 }
 
 class RestProductCatalog(productCatalog: ActorRef) extends HttpApp {
-  val mapper = new ObjectMapper()
+
+  private val config = ConfigFactory.load()
 
   implicit val system: ActorSystem = ActorSystem("Rest", config.getConfig("rest").withFallback(config))
 
   implicit val timeout: Timeout = Timeout(FiniteDuration(1, TimeUnit.SECONDS))
-  private val config = ConfigFactory.load()
 
-  override def startServer(host: String, port: Int): Unit = {
-    super.startServer(host, port)
-    mapper.registerModule(DefaultScalaModule)
-  }
+  implicit val formats: DefaultFormats.type = DefaultFormats
 
   override protected def routes: Route = {
     pathPrefix("catalog") {
@@ -49,9 +46,8 @@ class RestProductCatalog(productCatalog: ActorRef) extends HttpApp {
             query =>
               onComplete(productCatalog ? query) {
                 case Success(items: List[Item]) =>
-                  val json = mapper.writeValueAsString(items)
-                  System.out.println(json)
-                  complete("abc")
+                  val json = write(items)
+                  complete(json)
                 case _ => complete(StatusCodes.InternalServerError)
               }
           }
