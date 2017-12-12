@@ -19,6 +19,9 @@ object ProductCatalog extends App {
   implicit val system: ActorSystem = ActorSystem(systemName, config.getConfig(catalog).withFallback(config))
 
   private val productCatalog = system.actorOf(ProductCatalog.props(dbFile), catalog)
+
+  RestProductCatalog.startServer(productCatalog)
+
   Await.result(system.whenTerminated, Duration.Inf)
 
   def props(file: String): Props = Props(new ProductCatalog(file))
