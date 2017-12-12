@@ -4,12 +4,21 @@ import java.net.URI
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.event.LoggingReceive
+import catalog.ProductStoreManager.FindProducts
 
 object Customer {
 
   case class StartCheckout()
 
-  case class DoPayment()
+  sealed trait PaymentMethod
+
+  case class DoPayment(method: PaymentMethod)
+
+  case class Blik(code: String) extends PaymentMethod
+
+  case class CreditCard(cardNumber: String, expirationDate: String, owner: String, cvv: String) extends PaymentMethod
+
+  case class PayPal(login: String, password: String) extends PaymentMethod
 
 }
 
@@ -21,7 +30,6 @@ class Customer extends Actor {
   import PaymentService._
 
   val cartId: Long = 1
-  /*Random.nextLong()*/
   val cartManager: ActorRef = context.actorOf(Props(new CartManager(cartId, Cart.empty)), "CartManager")
 
   override def receive: Receive = LoggingReceive {
@@ -30,6 +38,13 @@ class Customer extends Actor {
     case "checkout" =>
       cartManager ! StartCheckout
       context become inCheckout
+    case query: String =>
+      val productStore = context.actorSelection("akka.tcp://ProductCatalog@127.0.0.1:22553/user/catalog")
+      productStore ! FindProducts(query)
+    case items: List[Item] => items.foreach(i => {
+      System.out.println("\t" + i)
+      cartManager ! ItemAdded(i, System.currentTimeMillis())
+    })
   }
 
   def inCheckout(): Receive = LoggingReceive {
@@ -39,12 +54,14 @@ class Customer extends Actor {
       checkout ! DeliveryMethodSelected
       checkout ! PaymentSelected(System.currentTimeMillis())
       context become inPayment
-    case CartEmpty => System.out.println("car has been emptied! kewl")
+    case CartEmpty => System.out.println("cart has been emptied!")
   }
 
   def inPayment(): Receive = LoggingReceive {
     case PaymentServiceStarted(service) =>
-      service ! DoPayment
+      service ! DoPayment(Blik("123456"))
+    // service ! DoPayment(CreditCard("1234567812345678", "07/95", "John Doe", "777"))
+    // service ! DoPayment(PayPal("login", "password"))
     case PaymentConfirmed =>
       context become inCheckout
   }
