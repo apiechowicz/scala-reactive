@@ -3,12 +3,11 @@ package catalog
 import java.util.concurrent.TimeUnit
 
 import _root_.catalog.ProductStoreManager.FindProducts
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorRef
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{HttpApp, Route}
 import akka.pattern.ask
 import akka.util.Timeout
-import com.typesafe.config.ConfigFactory
 import eShop.Item
 import org.json4s._
 import org.json4s.jackson.Serialization.write
@@ -29,10 +28,6 @@ object RestProductCatalog {
 }
 
 class RestProductCatalog(productCatalog: ActorRef) extends HttpApp {
-
-  private val config = ConfigFactory.load()
-
-  implicit val system: ActorSystem = ActorSystem("Rest", config.getConfig("rest").withFallback(config))
 
   implicit val timeout: Timeout = Timeout(FiniteDuration(1, TimeUnit.SECONDS))
 
