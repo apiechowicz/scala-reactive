@@ -9,20 +9,22 @@ object eShop extends App {
     val system = ActorSystem("eShop", config.getConfig("eShop").withFallback(config))
     val customer = system.actorOf(Props[Customer], "Customer")
 
-    customer ! "add"
-    customer ! "add"
-    customer ! "remove"
+    /*    customer ! "add"
+        customer ! "add"
+        customer ! "remove"*/
 
-    System.out.println("\tEnter query:")
-    val query = scala.io.StdIn.readLine()
-    customer ! query
+    for (i <- 1 to 10) {
+      System.out.println("\tEnter query:")
+      val query = scala.io.StdIn.readLine()
+      customer ! query
+    }
 
-    Thread.sleep(5 * 1000)
-    system.terminate()
-    Thread.sleep(5 * 1000)
+    /*    Thread.sleep(5 * 1000)
+        system.terminate()
+        Thread.sleep(5 * 1000)
 
-    val system2 = ActorSystem("eShop", config.getConfig("eShop").withFallback(config))
-    val customer2 = system2.actorOf(Props[Customer], "Customer")
-    customer2 ! "checkout"
+        val system2 = ActorSystem("eShop", config.getConfig("eShop").withFallback(config))
+        val customer2 = system2.actorOf(Props[Customer], "Customer")
+        customer2 ! "checkout"*/
   }
 }
