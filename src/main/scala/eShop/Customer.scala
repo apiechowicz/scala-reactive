@@ -42,7 +42,6 @@ class Customer extends Actor {
       val productStore = context.actorSelection("akka.tcp://ProductCatalog@127.0.0.1:22553/user/catalog")
       productStore ! FindProducts(query)
     case items: List[Item] => items.foreach(i => {
-      System.out.println("\t" + i)
       cartManager ! ItemAdded(i, System.currentTimeMillis())
     })
   }

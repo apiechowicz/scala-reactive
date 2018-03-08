@@ -3,10 +3,11 @@ package catalog
 import akka.actor.{Actor, Props}
 import akka.event.LoggingReceive
 import catalog.ProductStoreManager.FindProducts
+import eShop.Item
 
 object ProductStoreManager {
 
-  def props(file: String): Props = Props(new ProductStoreManager(new ProductStore(file)))
+  def props(items: List[Item]): Props = Props(new ProductStoreManager(new ProductStore(items)))
 
   case class FindProducts(query: String)
 
@@ -14,6 +15,8 @@ object ProductStoreManager {
 
 class ProductStoreManager(productStore: ProductStore) extends Actor {
   override def receive: Receive = LoggingReceive {
-    case FindProducts(query) => sender ! productStore.getBestMatch(query)
+    case FindProducts(query) =>
+      System.out.println("Actor %s is handling query.".format(this.toString))
+      sender ! productStore.getBestMatch(query)
   }
 }

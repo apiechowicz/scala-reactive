@@ -2,9 +2,7 @@ package catalog
 
 import eShop.Item
 
-class ProductStore(file: String) {
-
-  private val items = ProductParser.parseProducts(file)
+class ProductStore(items: List[Item]) {
 
   private val numberOfBestMatches = 10
 
